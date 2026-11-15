@@ -24,6 +24,15 @@ class StreamStateHolder @Inject constructor() {
     private val _camera = MutableStateFlow("back")
     val camera: StateFlow<String> = _camera.asStateFlow()
 
+    private val _cameraSwitchStatus = MutableStateFlow("")
+    val cameraSwitchStatus: StateFlow<String> = _cameraSwitchStatus.asStateFlow()
+    private val _requestedCamera = MutableStateFlow("")
+    val requestedCamera: StateFlow<String> = _requestedCamera.asStateFlow()
+    fun setCameraSwitchStatus(status: String, requested: String = "") {
+        _requestedCamera.value = requested
+        _cameraSwitchStatus.value = status
+    }
+
     private val _streamingPort = MutableStateFlow(4747)
     val streamingPort: StateFlow<Int> = _streamingPort.asStateFlow()
 
@@ -42,8 +51,16 @@ class StreamStateHolder @Inject constructor() {
     private val _jpegQuality = MutableStateFlow(85)
     val jpegQuality: StateFlow<Int> = _jpegQuality.asStateFlow()
 
-    private val _useAvc = MutableStateFlow(false)
+    private val _useAvc = MutableStateFlow(true)
     val useAvc: StateFlow<Boolean> = _useAvc.asStateFlow()
+
+    private val _useHevc = MutableStateFlow(false)
+    val useHevc: StateFlow<Boolean> = _useHevc.asStateFlow()
+    fun setUseHevc(value: Boolean) { _useHevc.value = value }
+
+    private val _useHdr = MutableStateFlow(false)
+    val useHdr: StateFlow<Boolean> = _useHdr.asStateFlow()
+    fun setUseHdr(value: Boolean) { _useHdr.value = value }
 
     private val _avcBitrate = MutableStateFlow(-1)
     val avcBitrate: StateFlow<Int> = _avcBitrate.asStateFlow()

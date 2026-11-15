@@ -33,16 +33,14 @@ class PreferencesManager(private val context: Context) {
         val JPEG_QUALITY = intPreferencesKey("jpeg_quality")
         val FPS = intPreferencesKey("fps")
         val USE_AVC = booleanPreferencesKey("use_avc")
+        val USE_HEVC = booleanPreferencesKey("use_hevc")
         val AVC_BITRATE = intPreferencesKey("avc_bitrate")
         val USE_SCREEN_CAPTURE = booleanPreferencesKey("use_screen_capture")
         val IS_STREAMING = booleanPreferencesKey("is_streaming")
         val HTTPS_RUNNING = booleanPreferencesKey("https_running")
     }
 
-    /**
-     * Flow of app settings that emits whenever any setting changes.
-     */
-    val appSettingsFlow: Flow<AppSettings> = dataStore.data
+    private val preferencesFlow = dataStore.data
         .catch { exception ->
             if (exception is IOException) {
                 emit(emptyPreferences())
@@ -50,6 +48,8 @@ class PreferencesManager(private val context: Context) {
                 throw exception
             }
         }
+
+    val appSettingsFlow: Flow<AppSettings> = preferencesFlow
         .map { preferences ->
             AppSettings(
                 host = preferences[PreferenceKeys.HOST] ?: "0.0.0.0",
@@ -60,25 +60,16 @@ class PreferencesManager(private val context: Context) {
             )
         }
 
-    /**
-     * Flow of stream configuration that emits whenever any stream setting changes.
-     */
-    val streamConfigFlow: Flow<StreamConfig> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
+    val streamConfigFlow: Flow<StreamConfig> = preferencesFlow
         .map { preferences ->
             StreamConfig(
                 width = preferences[PreferenceKeys.WIDTH] ?: 1920,
                 height = preferences[PreferenceKeys.HEIGHT] ?: 1080,
                 jpegQuality = preferences[PreferenceKeys.JPEG_QUALITY] ?: 85,
                 fps = preferences[PreferenceKeys.FPS] ?: 30,
-                useAvc = preferences[PreferenceKeys.USE_AVC] ?: false,
-                avcBitrate = preferences[PreferenceKeys.AVC_BITRATE]
+                useAvc = preferences[PreferenceKeys.USE_AVC] ?: true,
+                avcBitrate = preferences[PreferenceKeys.AVC_BITRATE],
+                useHevc = preferences[PreferenceKeys.USE_HEVC] ?: false
             )
         }
 
@@ -117,6 +108,7 @@ class PreferencesManager(private val context: Context) {
             preferences[PreferenceKeys.JPEG_QUALITY] = config.jpegQuality
             preferences[PreferenceKeys.FPS] = config.fps
             preferences[PreferenceKeys.USE_AVC] = config.useAvc
+            preferences[PreferenceKeys.USE_HEVC] = config.useHevc
             config.avcBitrate?.let { preferences[PreferenceKeys.AVC_BITRATE] = it }
         }
     }
@@ -144,6 +136,10 @@ class PreferencesManager(private val context: Context) {
         dataStore.edit { preferences ->
             preferences[PreferenceKeys.USE_AVC] = useAvc
         }
+    }
+
+    suspend fun updateUseHevc(value: Boolean) {
+        dataStore.edit { it[PreferenceKeys.USE_HEVC] = value }
     }
 
     suspend fun updateAvcBitrate(bitrate: Int?) {

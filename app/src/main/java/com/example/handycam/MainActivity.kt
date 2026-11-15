@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
         prefs.edit().putBoolean(RemoteStartKeys.KEY_PENDING_REMOTE_START, false).apply()
 
         val intent = Intent(this, StreamService::class.java).apply {
-            action = "com.example.handycam.ACTION_START"
+            action = StreamActions.START
             putExtra("host", mainViewModel.streamStateHolder.host.value)
             putExtra("streamingPort", mainViewModel.streamStateHolder.streamingPort.value)
             putExtra("width", mainViewModel.streamStateHolder.width.value)
@@ -94,6 +94,8 @@ class MainActivity : ComponentActivity() {
             putExtra("jpegQuality", mainViewModel.streamStateHolder.jpegQuality.value)
             putExtra("targetFps", mainViewModel.streamStateHolder.fps.value)
             putExtra("useAvc", mainViewModel.streamStateHolder.useAvc.value)
+            putExtra("useHevc", mainViewModel.streamStateHolder.useHevc.value)
+            putExtra("useHdr", mainViewModel.streamStateHolder.useHdr.value)
             putExtra("avcBitrate", mainViewModel.streamStateHolder.avcBitrate.value)
         }
         try {
