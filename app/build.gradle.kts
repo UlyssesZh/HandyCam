@@ -3,9 +3,8 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.legacy.kapt)
     alias(libs.plugins.kotlin.compose)
-    id("kotlin-kapt")
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -92,9 +91,53 @@ android {
     }
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+// UTP runs in separate configurations from the app and its Netty BOM.
+configurations.matching {
+    it.name == "unified-test-platform-core" ||
+        it.name == "unified-test-platform-android-test-plugin-host-emulator-control"
+}.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "io.netty") {
+            useVersion("4.1.137.Final")
+            because("Align test-platform Netty modules on a patched 4.1 release")
+        }
+    }
+}
+
+// Tooling resolves independently of the buildscript constraints and app runtime.
+configurations.matching {
+    it.name == "androidLintTool" || it.name.startsWith("unified-test-platform-") ||
+        it.name.startsWith("kapt", ignoreCase = true) ||
+        it.name.contains("AnnotationProcessor", ignoreCase = true)
+}.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "com.google.guava" && requested.name == "guava") {
+            useVersion("33.7.2-jre")
+            because("Align Guava on a release with the deserialization fix")
+        }
+    }
+}
+
+// Lint and the UTP result listener have classpaths separate from the buildscript.
+configurations.matching {
+    it.name == "androidLintTool" ||
+        it.name == "unified-test-platform-android-test-plugin-result-listener-gradle"
+}.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.bouncycastle" &&
+            requested.name in setOf("bcprov-jdk18on", "bcpkix-jdk18on", "bcutil-jdk18on")
+        ) {
+            useVersion("1.86")
+            because("Align the tooling's Bouncy Castle modules on a patched release")
+        }
+        if (requested.group == "org.apache.commons" && requested.name == "commons-compress") {
+            useVersion("1.28.0")
+            because("Use a Commons Compress release that depends on patched Commons Lang")
+        }
+        if (requested.group == "org.apache.httpcomponents" && requested.name == "httpclient") {
+            useVersion("4.5.14")
+            because("Use a patched Apache HttpClient release")
+        }
     }
 }
 
